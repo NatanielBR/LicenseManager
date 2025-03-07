@@ -1,0 +1,6 @@
+[variables]
+DEBUG = 'False'
+ALLOWED_HOSTS = '*'
+
+[start]
+cmd = "python manage.py migrate && gunicorn LicenseManager.wsgi --bind 0.0.0.0:8000"
