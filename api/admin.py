@@ -6,10 +6,15 @@ from django.utils.safestring import mark_safe
 from django.db import models
 from api.models import Application, Client, Resource
 from api.widgets.file_upload import ClearableFileInputCustom
-
+"""
+{
+  "application_id": "8c51224b-8a11-4ade-8066-2167d8d51dc9",
+  "license_id": "8b090c89-f582-45f2-9fae-69698b25a288"
+}"""
 
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('name', 'valid_until', 'application')
+    readonly_fields = ('license',)
 
     def application(self, obj):
         return mark_safe('<a href="{}">{}</a>'.format(
@@ -17,7 +22,13 @@ class ClientAdmin(admin.ModelAdmin):
             obj.application.name
         ))
 
+    def license(self, obj: Client):
+        return mark_safe('<dd style="font-family: monospace;">{}</dd>'.format(
+            obj.id
+        ))
+
     application.short_description = 'Application'
+    license.short_description = 'License'
 
 class ResourceAdmin(admin.ModelAdmin):
     list_display = ('name', 'application')
