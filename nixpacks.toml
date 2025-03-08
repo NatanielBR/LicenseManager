@@ -3,4 +3,4 @@ DEBUG = 'False'
 ALLOWED_HOSTS = '*'
 
 [start]
-cmd = "python manage.py migrate && gunicorn LicenseManager.wsgi --bind 0.0.0.0:8000"
+cmd = "python manage.py collectstatic && python manage.py migrate && uvicorn LicenseManager.asgi --bind 0.0.0.0:8000"
