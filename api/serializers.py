@@ -1,5 +1,6 @@
 import base64
 
+from django.core.signing import Signer
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -53,9 +54,20 @@ class IsLicenseValidSerializer(serializers.Serializer):
         if timezone.now() < client.valid_until:
             is_valid = True
 
+        if is_valid:
+            signer = Signer()
+            license = signer.sign_object([
+                str(self.validated_data['license_id'], ),
+                str(self.validated_data['application_id'], ),
+                str(self.validated_data['machine_id'], )
+            ])
+        else:
+            license = ''
+
         return IsLicenseValidResponseSerializer(
             instance={
                 'status': is_valid,
+                'auth_token': license,
                 'valid_until': client.valid_until.isoformat()
             }
         )
@@ -63,24 +75,40 @@ class IsLicenseValidSerializer(serializers.Serializer):
 
 class IsLicenseValidResponseSerializer(serializers.Serializer):
     status = serializers.BooleanField()
+    auth_token = serializers.CharField()
     valid_until = serializers.DateTimeField()
 
 
 class GetResourceSerializer(serializers.Serializer):
-    application_id = serializers.CharField(max_length=254)
-    license_id = serializers.CharField(max_length=254)
+    auth_token = serializers.CharField(max_length=254)
     resource_id = serializers.CharField(max_length=254)
 
-    def validate_application_id(self, value):
-        application_query = Application.objects.filter(id=value)
-        if not application_query.exists():
-            raise serializers.ValidationError('Application not found')
-        return value
+    def validate_auth_token(self, value):
+        signer = Signer()
+        try:
+            # ['license_id', 'application_id','machine_id']
+            auth_token = signer.unsign_object(value)
+        except Exception:
+            raise serializers.ValidationError('Invalid auth token')
 
-    def validate_license_id(self, value):
-        query = Client.objects.filter(id=value, application__in=[self.initial_data['application_id']])
+        license_id, application_id, machine_id = auth_token
+
+        query = Client.objects.filter(
+            id=license_id, application__in=[application_id]
+        )
+
         if not query.exists():
-            raise serializers.ValidationError('License not found')
+            raise serializers.ValidationError('License invalid')
+
+        client = query.first()
+
+        if not client.machine_lock:
+            # allow access to any machine
+            return value
+
+        if client.machine_id != machine_id:
+            raise serializers.ValidationError('License invalid')
+
         return value
 
     def validate_resource_id(self, value):
