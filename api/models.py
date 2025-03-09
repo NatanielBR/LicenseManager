@@ -19,6 +19,8 @@ class Client(models.Model):
     application = models.ManyToManyField(Application, blank=True)
 
     valid_until = models.DateTimeField()
+    machine_lock = models.BooleanField(default=False)
+    machine_id = models.CharField(max_length=254, blank=True, default='')
 
     def __str__(self):
         return self.name + " - " + str(self.application)

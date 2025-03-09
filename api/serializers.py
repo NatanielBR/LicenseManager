@@ -9,6 +9,7 @@ from api.models import Application, Client, Resource
 class IsLicenseValidSerializer(serializers.Serializer):
     application_id = serializers.CharField(max_length=254)
     license_id = serializers.CharField(max_length=254)
+    machine_id = serializers.CharField(max_length=254)
 
     def validate_application_id(self, value):
         application_query = Application.objects.filter(id=value)
@@ -20,6 +21,30 @@ class IsLicenseValidSerializer(serializers.Serializer):
         license_query = Client.objects.filter(id=value, application__in=[self.initial_data['application_id']])
         if not license_query.exists():
             raise serializers.ValidationError('License not found')
+        return value
+
+    def validate_machine_id(self, value):
+        if value == '' or value is None:
+            raise serializers.ValidationError('Machine ID is required')
+
+        client_query = Client.objects.filter(
+            id=self.initial_data['license_id'],
+            application__in=[self.initial_data['application_id']]
+        )
+        if not client_query.exists():
+            raise serializers.ValidationError('License not found')
+
+        client: Client = client_query.first()
+
+        if not client.machine_lock:
+            return value
+
+        if client.machine_id == '':
+            client.machine_id = value
+            client.save()
+        elif client.machine_id != value:
+            raise serializers.ValidationError('Machine ID unmatched')
+
         return value
 
     def save(self) -> 'IsLicenseValidResponseSerializer':
@@ -69,7 +94,6 @@ class GetResourceSerializer(serializers.Serializer):
             id=self.validated_data['resource_id'],
             application__in=[self.initial_data['application_id']]
         )
-
 
         return ResponseResourceSerializer(
             instance={
