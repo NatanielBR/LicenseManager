@@ -24,8 +24,8 @@ class LicenseViewSet(GenericViewSet):
 
     @swagger_auto_schema(
         method='post',
-        responses={200: GetResourceSerializer()},
-        request_body=ResponseResourceSerializer(),
+        responses={200: ResponseResourceSerializer()},
+        request_body=GetResourceSerializer(),
     )
     @action(methods=['post'], detail=False)
     def resource(self, request):
