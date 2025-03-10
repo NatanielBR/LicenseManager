@@ -3,12 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from api.permissions import IsRight
 from api.serializers import IsLicenseValidResponseSerializer, IsLicenseValidSerializer, GetResourceSerializer, \
     ResponseResourceSerializer
 
 
 # Create your views here.
 class LicenseViewSet(GenericViewSet):
+    permission_classes = [IsRight]
 
     @swagger_auto_schema(
         method='post',
