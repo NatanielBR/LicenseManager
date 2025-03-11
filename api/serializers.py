@@ -1,6 +1,7 @@
 import base64
 
 from django.core.signing import Signer
+from django.db.models.fields.files import FieldFile
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -117,18 +118,13 @@ class GetResourceSerializer(serializers.Serializer):
             raise serializers.ValidationError('Resource not found')
         return value
 
-    def save(self) -> 'ResponseResourceSerializer':
+    def save(self) -> 'FieldFile':
         resource = Resource.objects.get(
             id=self.validated_data['resource_id'],
             application__in=[self.initial_data['application_id']]
         )
 
-        return ResponseResourceSerializer(
-            instance={
-                'resource_id': resource.id,
-                'resource': base64.b64encode(resource.data.read()).decode()
-            }
-        )
+        return resource.data
 
 
 class ResponseResourceSerializer(serializers.Serializer):

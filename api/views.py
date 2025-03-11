@@ -1,3 +1,5 @@
+from django.db.models.fields.files import FieldFile
+from django.http import FileResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -34,4 +36,6 @@ class LicenseViewSet(GenericViewSet):
         serializer = GetResourceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return Response(data=serializer.save().data)
+        file_data: FieldFile = serializer.save()
+
+        return FileResponse(file_data, content_type='application/octet-stream')
