@@ -33,7 +33,6 @@ class ClientAdmin(admin.ModelAdmin):
 class ResourceAdmin(admin.ModelAdmin):
     list_display = ('name', 'application')
     # Add it to the details view:
-    readonly_fields = ('value_download',)
     formfield_overrides = {
         models.FileField: {'widget': ClearableFileInputCustom()},
     }
@@ -44,16 +43,8 @@ class ResourceAdmin(admin.ModelAdmin):
             obj.application.name
         ))
 
-    def value_download(self, obj):
-        if obj.data.name == '':
-            return 'Empty'
-        else:
-            return mark_safe('<a href="data:application/octet-stream;base64,{0}" download="arquivo.txt">{1}</a>'.format(
-            base64.b64encode(obj.data.read()).decode()
-            , "Resource"))
-
     application.short_description = 'Application'
-    value_download.short_description = 'Download'
+    # value_download.short_description = 'Download'
 
 
 # Register your models here.
